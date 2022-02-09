@@ -69,7 +69,7 @@ SELECT ri.emp_no,
 	   LEFT JOIN dept_emp AS de
        ON ri.emp_no = de.emp_no
  WHERE de.to_date = '9999-01-01';
- 
+
 SELECT * FROM current_emp;
 
 -- DROP TABLE current_emp;
