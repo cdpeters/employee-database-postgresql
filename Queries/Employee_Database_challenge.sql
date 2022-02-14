@@ -130,9 +130,7 @@ SELECT mn.title,
 
 --------------------------------------------------------------------------------
 -- the departments of the retiring managers
-SELECT cr.emp_no,
-	   cr.first_name, cr.last_name,
-	   cr.title,
+SELECT cr.title,
 	   cr.dept_name
   INTO retiring_managers
   FROM current_retiring AS cr
