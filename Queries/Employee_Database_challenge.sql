@@ -11,7 +11,9 @@ SELECT e.emp_no,
  WHERE (e.birth_date BETWEEN '1952-01-01' AND '1955-12-31')
  ORDER BY e.emp_no;
 
- -- Unique titles table - use Distinct with Orderby to remove duplicate rows
+ -- Unique titles table - use Distinct with Orderby to remove duplicate rows.
+ -- The date '9999-01-01' represents current day and thus can be used when
+ -- filtering to keep employees that are currently working at the company.
 SELECT DISTINCT ON (rt.emp_no) rt.emp_no,
        rt.first_name, rt.last_name,
        rt.title
