@@ -1,3 +1,4 @@
+--------------------------------------------------------------------------------
 -- DELIVERABLE 1. Number of Retiring Employees by Title
 -- Retirement titles table
 SELECT e.emp_no,
@@ -82,8 +83,15 @@ SELECT COUNT(cr.emp_no) AS count,
  ORDER BY count DESC;
 
 -- Total number of positions needing replacing
-SELECT SUM(rd.count) AS total_retiring
-  FROM retiring_dept AS rd;
+SELECT tr.total_current_employees,
+	   tr.total_retiring::BIGINT,
+	   TO_CHAR(100 * (tr.total_retiring::FLOAT / tr.total_current_employees::FLOAT), 'fm999%') AS percent_retiring
+  INTO retirement_summary
+  FROM (SELECT COUNT(de.emp_no) AS total_current_employees,
+               (SELECT SUM(rd.count) AS total_retiring
+                  FROM retiring_dept AS rd)
+          FROM dept_emp AS de
+         WHERE de.to_date = '9999-01-01') AS tr;
 
 --------------------------------------------------------------------------------
 -- QUESTION 2: Are there enough qualified, retirement-ready employees to mentor
@@ -117,7 +125,8 @@ SELECT DISTINCT ON(e.emp_no) e.emp_no,
 -- and group them by title
 SELECT mn.title,
 	   mn.mentors_needed,
-	   em.eligible_mentors
+	   em.eligible_mentors,
+	   TO_CHAR(100 * (em.eligible_mentors::FLOAT / mn.mentors_needed::FLOAT), 'fm999%') AS percent_need_met
   INTO mentoring_needs
   FROM (SELECT ethd.title,
 	           COUNT(ethd.emp_no) AS mentors_needed
@@ -130,6 +139,50 @@ SELECT mn.title,
                     GROUP BY me.title) AS em
 	   ON (mn.title = em.title);
 
+-- Further group the mentoring_needs table to show the results for all
+-- engineering and all staff titles. This table will be used to see if the
+-- excess mentors for Senior Engineers and Senior Staff are enough to cover the
+-- remaining need for the Assistant Engineer, Engineer, and Staff titles.
+
+-- First collect the same fields as mentoring_needs but for the engineer and
+-- staff titles grouped together in a temporary table.
+SELECT mn.mentors_needed,
+	   mn.eligible_mentors,
+	   TO_CHAR(100 * (mn.eligible_mentors::FLOAT / mn.mentors_needed::FLOAT), 'fm999%') AS percent_need_met
+  INTO temp_mentoring_needs_eng_staff
+  FROM (SELECT SUM(mn.mentors_needed)::BIGINT AS mentors_needed,
+	           SUM(mn.eligible_mentors)::BIGINT AS eligible_mentors
+          FROM mentoring_needs AS mn
+         WHERE mn.title LIKE '%Engineer') AS mn
+ UNION
+SELECT mn.mentors_needed,
+	   mn.eligible_mentors,
+	   TO_CHAR(100 * (mn.eligible_mentors::FLOAT / mn.mentors_needed::FLOAT), 'fm999%') AS percent_need_met
+  FROM (SELECT SUM(mn.mentors_needed)::BIGINT AS mentors_needed,
+	           SUM(mn.eligible_mentors)::BIGINT AS eligible_mentors
+          FROM mentoring_needs AS mn
+         WHERE mn.title LIKE '%Staff') AS mn;
+
+-- Next add in the title column and update the title column values based on the
+-- percent_need_met
+ ALTER TABLE temp_mentoring_needs_eng_staff ADD COLUMN title VARCHAR;
+
+UPDATE temp_mentoring_needs_eng_staff
+   SET title = 'All Engineering Titles'
+ WHERE percent_need_met = '98%';
+
+UPDATE temp_mentoring_needs_eng_staff
+   SET title = 'All Staff Titles'
+ WHERE percent_need_met = '107%';
+
+-- Finally, reorder the columns and create a permanent table to hold the results
+SELECT title,
+	   mentors_needed,
+	   eligible_mentors,
+	   percent_need_met
+  INTO mentoring_needs_eng_staff
+  FROM temp_mentoring_needs_eng_staff;
+
 --------------------------------------------------------------------------------
 -- the departments of the retiring managers
 SELECT cr.title,
@@ -138,7 +191,7 @@ SELECT cr.title,
   FROM current_retiring AS cr
  WHERE cr.title = 'Manager';
 
- -------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 -- Based on the retiring_dept results, here is a table containing the 3
 -- departments with the most employees retiring and their counts by title
 SELECT DISTINCT ti.title,
@@ -168,21 +221,21 @@ SELECT DISTINCT ti.title,
  ORDER BY ti.title;
 
 --------------------------------------------------------------------------------
--- -- (optional) table showing percent retiring by department
+-- (optional) table showing percent retiring by department
 -- SELECT ce.dept_name,
--- 	     ce.current_employees,
--- 	     re.retiring_employees,
--- 	     TO_CHAR(100 * (re.retiring_employees::FLOAT / ce.current_employees::FLOAT), 'fm00D0%') AS percent_retiring
+-- 	   ce.current_employees,
+-- 	   re.retiring_employees,
+-- 	   TO_CHAR(100 * (re.retiring_employees::FLOAT / ce.current_employees::FLOAT), 'fm00D0%') AS percent_retiring
 --   FROM (SELECT d.dept_name,
--- 	             COUNT(de.emp_no) as current_employees
+-- 	           COUNT(de.emp_no) as current_employees
 --           FROM dept_emp AS de
 --                INNER JOIN departments AS d
 --                ON (de.dept_no = d.dept_no)
 --          WHERE de.to_date = '9999-01-01'
 --          GROUP BY d.dept_name) AS ce
 --        INNER JOIN (SELECT cr.dept_name,
--- 	                        COUNT(cr.emp_no) AS retiring_employees
+-- 	                      COUNT(cr.emp_no) AS retiring_employees
 --                      FROM current_retiring AS cr
 --                     GROUP BY cr.dept_name) AS re
--- 	     ON (ce.dept_name = re.dept_name)
+-- 	   ON (ce.dept_name = re.dept_name)
 --  ORDER BY re.retiring_employees DESC;
