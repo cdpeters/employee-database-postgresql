@@ -5,15 +5,17 @@ The purpose of this project is to identify, for a fictional company, the number 
 
 The data for this project is contained within six starting csv's that are imported into PostgresSQL for storage and querying. The data contains information about employees both past and present including the departments they worked for, titles, salary, and to/from dates. The starting csv's are:
 
-| No. | File Name        | Description                                                 |
-| --- | ---------------- | ----------------------------------------------------------- |
+<center>
+| No. | File Name          | Description                                               |
+| --- | ------------------ | --------------------------------------------------------- |
 | 1   | *departments.csv*  | a look up table for department names by department number |
 | 2   | *dept_emp.csv*     | employees for each department                             |
 | 3   | *dept_manager.csv* | managers for each department                              |
 | 4   | *employees.csv*    | employee information for each employee                    |
 | 5   | *salaries.csv*     | salary information for each employee                      |
 | 6   | *titles.csv*       | title information for each employee                       |
-
+</center>
+        
 The work for determining the relevant retirement information that the company is interested in can be found in the form of queries in the file *[Employee_Database_challenge.sql](/Queries/Employee_Database_challenge.sql)* within the Queries directory. The starting csv's and all csv's of tables created from queries are contained within the *[data_files.zip](/Data/data_files.zip)* file in the Data directory.
 
 >##### Note: The additional csv's in *data_files.zip* are the result of tangentially related queries not central to this particular project (see *queries.sql* in the Query directory for details).
